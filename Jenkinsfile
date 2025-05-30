@@ -9,7 +9,7 @@ pipeline {
         // Etapa 1: Checkout del repositorio
         stage('Checkout') {
             steps {
-                git branch: 'master', url: 'https://github.com/danieltapasco/form-ucp-nlp.git'
+                git branch: 'main', url: 'https://github.com/danieltapasco/form-ucp-nlp.git'
             }
         }
 
