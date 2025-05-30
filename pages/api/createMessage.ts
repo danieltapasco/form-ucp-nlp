@@ -9,7 +9,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { gender, message, socialNetworkId, gold } = req.body;
 
   try {
-    //Ajustes
     // Crear mensaje
     const nuevoMensaje = await prisma.message.create({
       data: {
