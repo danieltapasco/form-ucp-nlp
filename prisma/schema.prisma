@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model message {
+  id                Int             @id @default(autoincrement())
+  gender            String?         @db.VarChar(20)
+  message           String?
+  gold              String?         @default("NO") @db.VarChar(3)
+  created_at        DateTime?       @default(now()) @db.Timestamp(6)
+  social_network_id Int?
+  social_network    social_network? @relation(fields: [social_network_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model social_network {
+  id      Int       @id @default(autoincrement())
+  name    String?   @unique @db.VarChar(50)
+  message message[]
+}
