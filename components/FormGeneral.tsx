@@ -66,21 +66,33 @@ export default function FormGeneral() {
 
   return (
     <Box
-      maxWidth={400}
+      maxWidth={480}
       mx="auto"
-      p={4}
-      bgcolor="background.paper"
+      p={5}
+      bgcolor="white"
       borderRadius={4}
-      boxShadow={3}
-      mt={10}
+      boxShadow={10}
+      mt={4}
     >
-      <Typography variant="h4" align="center" mb={2} fontWeight="bold">
-        Formulario de Contacto
+      <Typography
+        variant="h4"
+        align="center"
+        mb={1}
+        fontWeight="bold"
+        color="primary"
+      >
+        Formulario de Investigación
       </Typography>
-      <Typography variant="body1" align="center" color="text.secondary" mb={4}>
-        Comparte tu mensaje y selecciona tus preferencias.
+      <Typography
+        variant="body1"
+        align="center"
+        color="text.secondary"
+        mb={4}
+      >
+        Comparte tu mensaje.
       </Typography>
 
+      {/* Selects */}
       <FormControl fullWidth margin="normal">
         <InputLabel id="gender-label">Género</InputLabel>
         <Select
@@ -95,11 +107,11 @@ export default function FormGeneral() {
       </FormControl>
 
       <FormControl fullWidth margin="normal">
-        <InputLabel id="social-network-label">Red Social Favorita</InputLabel>
+        <InputLabel id="social-network-label">Red Social</InputLabel>
         <Select
           labelId="social-network-label"
           value={socialNetwork}
-          label="Red Social Favorita"
+          label="Red Social"
           onChange={handleSocialNetworkChange}
         >
           <MenuItem value="1">X (Twitter)</MenuItem>
@@ -135,15 +147,21 @@ export default function FormGeneral() {
 
       <Button
         variant="contained"
-        color="primary"
         fullWidth
-        sx={{ mt: 3 }}
+        size="large"
+        sx={{
+          mt: 3,
+          bgcolor: 'primary.main',
+          color: 'white',
+          '&:hover': {
+            bgcolor: 'primary.dark',
+          },
+        }}
         onClick={handleSubmit}
       >
         Enviar
       </Button>
 
-      {/* Snackbar */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={4000}
