@@ -6,10 +6,18 @@ pipeline {
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/danieltapasco/form-ucp-nlp.git'
+            }
+        }
+
         stage('Build y Test en Docker') {
             steps {
                 script {
-                    docker.image('mcr.microsoft.com/playwright:v1.43.1-jammy').inside {
+                    def image = docker.image('mcr.microsoft.com/playwright:v1.43.1-jammy')
+                    image.pull()
+                    image.inside {
                         sh 'npm install'
                         sh 'npx playwright install'
                         sh 'npm run build'
@@ -30,6 +38,7 @@ pipeline {
                             currentBuild.result = 'UNSTABLE'
                         }
 
+                        // Crear carpeta de deploy simulado
                         sh 'mkdir -p prod && cp -r .next/* prod/'
                     }
                 }
