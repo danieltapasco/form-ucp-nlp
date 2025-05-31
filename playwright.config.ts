@@ -5,5 +5,5 @@ export default defineConfig({
     { name: 'chromium', use: { browserName: 'chromium' } },
     { name: 'firefox', use: { browserName: 'firefox' } },
   ],
-  testDir: './tests/e2e', // donde pongas tus tests
+  testDir: './tests', // donde pongas tus tests
 });
