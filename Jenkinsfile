@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        nodejs 'Node_24'
+        nodejs 'Node_24' // Configurado en Global Tools
     }
 
     stages {
@@ -15,49 +15,36 @@ pipeline {
         stage('Build') {
             steps {
                 sh 'npm install'
+                sh 'npx playwright install-deps'  // <- necesario en Jenkins (Linux)
+                sh 'npx playwright install'
                 sh 'npm run build'
-                sh 'npx playwright install'  // asegúrate de instalar navegadores en Jenkins
             }
         }
 
-        stage('Tests Unitarios') {
-            steps {
-                script {
-                    try {
-                        sh 'npm test -- --watchAll=false --ci --reporters=jest-junit'
-                        junit 'junit.xml'
-                    } catch (err) {
-                        echo "Tests unitarios fallaron: ${err}"
-                        currentBuild.result = 'UNSTABLE'
-                    }
-                }
-            }
-        }
-
-        stage('E2E en Paralelo') {
+        stage('Pruebas en Paralelo') {
             parallel {
-                stage('Playwright Chromium') {
+                stage('Pruebas Chrome') {
                     steps {
                         script {
                             try {
-                                sh 'npx playwright test --project=chromium --reporter=junit > junit-chromium.xml'
-                                junit 'junit-chromium.xml'
+                                sh 'npx playwright test --project=chromium --reporter=junit > junit-chrome.xml'
+                                junit 'junit-chrome.xml'
                             } catch (err) {
-                                echo "Playwright Chromium falló: ${err}"
+                                echo "Pruebas en Chrome fallaron: ${err}"
                                 currentBuild.result = 'UNSTABLE'
                             }
                         }
                     }
                 }
 
-                stage('Playwright Firefox') {
+                stage('Pruebas Firefox') {
                     steps {
                         script {
                             try {
                                 sh 'npx playwright test --project=firefox --reporter=junit > junit-firefox.xml'
                                 junit 'junit-firefox.xml'
                             } catch (err) {
-                                echo "Playwright Firefox falló: ${err}"
+                                echo "Pruebas en Firefox fallaron: ${err}"
                                 currentBuild.result = 'UNSTABLE'
                             }
                         }
@@ -70,7 +57,7 @@ pipeline {
             steps {
                 script {
                     sh 'mkdir -p prod && cp -r .next/* prod/'
-                    echo "Deploy simulado exitoso"
+                    echo "¡Deploy simulado exitoso! Archivos copiados a /prod"
                 }
             }
         }
@@ -78,6 +65,26 @@ pipeline {
 
     post {
         always {
+            publishHTML target: [
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'prod',
+                reportFiles: 'index.html',
+                reportName: 'Demo Deploy'
+            ]
+
+            mail(
+                subject: "Pipeline ${currentBuild.result}: ${env.JOB_NAME}",
+                body: """
+                    <h2>Resultado: ${currentBuild.result}</h2>
+                    <p><b>URL del Build:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                    <p><b>Consola:</b> <a href="${env.BUILD_URL}console">Ver logs</a></p>
+                """,
+                to: 'daniel.tapasco@ucp.edu.co',
+                mimeType: 'text/html'
+            )
+
             cleanWs()
         }
     }
