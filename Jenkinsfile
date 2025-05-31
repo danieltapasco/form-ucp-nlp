@@ -12,36 +12,51 @@ pipeline {
             }
         }
 
-        stage('Build y Test en Docker') {
+        stage('Build') {
             steps {
-                script {
-                    def image = docker.image('mcr.microsoft.com/playwright:v1.43.1-jammy')
-                    image.pull()
-                    image.inside {
-                        sh 'npm install'
-                        sh 'npx playwright install'
-                        sh 'npm run build'
+                sh 'npm install'
+                sh 'npx playwright install-deps'
+                sh 'npx playwright install'
+                sh 'npm run build'
+            }
+        }
 
-                        try {
-                            sh 'npx playwright test --project=chromium --reporter=junit > junit-chrome.xml'
-                            junit 'junit-chrome.xml'
-                        } catch (err) {
-                            echo "Pruebas Chrome fallaron: ${err}"
-                            currentBuild.result = 'UNSTABLE'
+        stage('Pruebas en Paralelo') {
+            parallel {
+                stage('Pruebas Chrome') {
+                    steps {
+                        script {
+                            try {
+                                sh 'npx playwright test --project=chromium --reporter=junit > junit-chrome.xml'
+                                junit 'junit-chrome.xml'
+                            } catch (err) {
+                                echo "Pruebas en Chrome fallaron: ${err}"
+                                currentBuild.result = 'UNSTABLE'
+                            }
                         }
-
-                        try {
-                            sh 'npx playwright test --project=firefox --reporter=junit > junit-firefox.xml'
-                            junit 'junit-firefox.xml'
-                        } catch (err) {
-                            echo "Pruebas Firefox fallaron: ${err}"
-                            currentBuild.result = 'UNSTABLE'
-                        }
-
-                        // Crear carpeta de deploy simulado
-                        sh 'mkdir -p prod && cp -r .next/* prod/'
                     }
                 }
+
+                stage('Pruebas Firefox') {
+                    steps {
+                        script {
+                            try {
+                                sh 'npx playwright test --project=firefox --reporter=junit > junit-firefox.xml'
+                                junit 'junit-firefox.xml'
+                            } catch (err) {
+                                echo "Pruebas en Firefox fallaron: ${err}"
+                                currentBuild.result = 'UNSTABLE'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Deploy a Producción (Simulado)') {
+            steps {
+                sh 'mkdir -p prod && cp -r .next/* prod/'
+                echo "¡Deploy simulado exitoso! Archivos copiados a /prod"
             }
         }
     }
