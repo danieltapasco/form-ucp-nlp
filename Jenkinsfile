@@ -58,7 +58,8 @@ pipeline {
         stage('Deploy a Producción (Simulado)') {
             steps {
                 script {
-                    sh 'mkdir -p prod && cp -r build/* prod/'
+                    // Cambia 'build' por '.next' o 'out' según tu configuración
+                    sh 'mkdir -p prod && cp -r .next/* prod/'
                     echo "¡Deploy simulado exitoso! Archivos copiados a /prod"
                 }
             }
