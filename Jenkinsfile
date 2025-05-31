@@ -1,8 +1,12 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'mcr.microsoft.com/playwright:v1.43.1-jammy' // Imagen oficial con todo preinstalado
+        }
+    }
 
     tools {
-        nodejs 'Node_24' // Configurado en Global Tools
+        nodejs 'Node_24' // Debe estar configurado en Jenkins Global Tools
     }
 
     stages {
@@ -15,8 +19,7 @@ pipeline {
         stage('Build') {
             steps {
                 sh 'npm install'
-                sh 'npx playwright install-deps'  // <- necesario en Jenkins (Linux)
-                sh 'npx playwright install'
+                sh 'npx playwright install' // Instala navegadores (ya tiene deps)
                 sh 'npm run build'
             }
         }
