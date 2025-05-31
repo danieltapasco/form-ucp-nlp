@@ -2,50 +2,62 @@ pipeline {
     agent any
 
     tools {
-        nodejs 'Node_24' // Configurado en Global Tools
+        nodejs 'Node_24'
     }
 
     stages {
-        // Etapa 1: Checkout del repositorio
         stage('Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/danieltapasco/form-ucp-nlp.git'
             }
         }
 
-        // Etapa 2: Build del proyecto
         stage('Build') {
             steps {
                 sh 'npm install'
                 sh 'npm run build'
+                sh 'npx playwright install'  // asegúrate de instalar navegadores en Jenkins
             }
         }
 
-        // Etapa 3: Pruebas en paralelo
-        stage('Pruebas en Paralelo') {
+        stage('Tests Unitarios') {
+            steps {
+                script {
+                    try {
+                        sh 'npm test -- --watchAll=false --ci --reporters=jest-junit'
+                        junit 'junit.xml'
+                    } catch (err) {
+                        echo "Tests unitarios fallaron: ${err}"
+                        currentBuild.result = 'UNSTABLE'
+                    }
+                }
+            }
+        }
+
+        stage('E2E en Paralelo') {
             parallel {
-                stage('Pruebas Chrome') {
+                stage('Playwright Chromium') {
                     steps {
                         script {
                             try {
-                                sh 'npm test -- --browser=chrome --watchAll=false --ci --reporters=jest-junit'
-                                junit 'junit-chrome.xml'
+                                sh 'npx playwright test --project=chromium --reporter=junit > junit-chromium.xml'
+                                junit 'junit-chromium.xml'
                             } catch (err) {
-                                echo "Pruebas en Chrome fallaron: ${err}"
+                                echo "Playwright Chromium falló: ${err}"
                                 currentBuild.result = 'UNSTABLE'
                             }
                         }
                     }
                 }
 
-                stage('Pruebas Firefox') {
+                stage('Playwright Firefox') {
                     steps {
                         script {
                             try {
-                                sh 'npm test -- --browser=firefox --watchAll=false --ci --reporters=jest-junit'
+                                sh 'npx playwright test --project=firefox --reporter=junit > junit-firefox.xml'
                                 junit 'junit-firefox.xml'
                             } catch (err) {
-                                echo "Pruebas en Firefox fallaron: ${err}"
+                                echo "Playwright Firefox falló: ${err}"
                                 currentBuild.result = 'UNSTABLE'
                             }
                         }
@@ -54,13 +66,11 @@ pipeline {
             }
         }
 
-        // Etapa 4: Simulación de Deploy
         stage('Deploy a Producción (Simulado)') {
             steps {
                 script {
-                    // Cambia 'build' por '.next' o 'out' según tu configuración
                     sh 'mkdir -p prod && cp -r .next/* prod/'
-                    echo "¡Deploy simulado exitoso! Archivos copiados a /prod"
+                    echo "Deploy simulado exitoso"
                 }
             }
         }
@@ -68,29 +78,6 @@ pipeline {
 
     post {
         always {
-            // Publicar reportes HTML (opcional)
-            publishHTML target: [
-                allowMissing: true,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'prod',
-                reportFiles: 'index.html',
-                reportName: 'Demo Deploy'
-            ]
-
-            // Notificación por email ante fallos
-            mail(
-                subject: "Pipeline ${currentBuild.result}: ${env.JOB_NAME}",
-                body: """
-                    <h2>Resultado: ${currentBuild.result}</h2>
-                    <p><b>URL del Build:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-                    <p><b>Consola:</b> <a href="${env.BUILD_URL}console">Ver logs</a></p>
-                """,
-                to: 'daniel.tapasco@ucp.edu.co',
-                mimeType: 'text/html'
-            )
-
-            // Limpiar workspace
             cleanWs()
         }
     }
